@@ -1,0 +1,11 @@
+[Unit]
+Description=Check the public IPv6 address every five minutes
+
+[Timer]
+OnBootSec=1min
+OnUnitInactiveSec=5min
+AccuracySec=15s
+Unit=ipv6-check.service
+
+[Install]
+WantedBy=timers.target

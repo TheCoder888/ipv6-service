@@ -1,0 +1,14 @@
+[Unit]
+Description=Check for a changed public IPv6 address
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/default/ipv6-check
+ExecStart=/usr/local/libexec/ipv6-check
+StateDirectory=ipv6-check
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true

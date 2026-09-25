@@ -1,0 +1,8 @@
+# Command run when the IPv6 changes. CURRENT_IPV6 and OLD_IPV6 are available.
+CHANGE_COMMAND=
+
+# Optional interface name, for example: enp3s0
+INTERFACE=
+
+# An IPv6 destination used only for a local route lookup; no packet is sent.
+PROBE_ADDRESS=2606:4700:4700::1111

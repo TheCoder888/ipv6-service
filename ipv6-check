@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+STATE_FILE=${STATE_FILE:-/var/lib/ipv6-check/current-ipv6}
+CHANGE_COMMAND=${CHANGE_COMMAND:-}
+PROBE_ADDRESS=${PROBE_ADDRESS:-2606:4700:4700::1111}
+INTERFACE=${INTERFACE:-}
+
+route_args=(-6 route get "$PROBE_ADDRESS")
+if [[ -n "$INTERFACE" ]]; then
+    route_args+=(dev "$INTERFACE")
+fi
+
+current_ipv6=$(ip "${route_args[@]}" | awk '
+    {
+        for (field = 1; field <= NF; field++) {
+            if ($field == "src" && (field + 1) <= NF) {
+                print $(field + 1)
+                exit
+            }
+        }
+    }
+')
+
+if [[ -z "$current_ipv6" ]]; then
+    echo "Unable to determine the current global IPv6 address" >&2
+    exit 1
+fi
+
+install -d -m 0750 "$(dirname "$STATE_FILE")"
+exec 9>"${STATE_FILE}.lock"
+flock 9
+
+saved_ipv6=""
+if [[ -r "$STATE_FILE" ]]; then
+    saved_ipv6=$(<"$STATE_FILE")
+fi
+
+if [[ "$current_ipv6" == "$saved_ipv6" ]]; then
+    exit 0
+fi
+
+if [[ -n "$CHANGE_COMMAND" ]]; then
+    CURRENT_IPV6=$current_ipv6 OLD_IPV6=$saved_ipv6 /bin/sh -c "$CHANGE_COMMAND"
+fi
+
+printf '%s\n' "$current_ipv6" >"${STATE_FILE}.tmp"
+chmod 0640 "${STATE_FILE}.tmp"
+mv -f "${STATE_FILE}.tmp" "$STATE_FILE"
+
+echo "IPv6 changed from '${saved_ipv6:-<none>}' to '$current_ipv6'"
