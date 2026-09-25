@@ -11,63 +11,21 @@ chmod +x install.sh
 sudo ./install.sh
 ```
 
-Edit `/etc/default/ipv6-check` and set `CHANGE_COMMAND`. The command can use
-the `CURRENT_IPV6` and `OLD_IPV6` environment variables.
+The installer installs the No-IP updater at
+`/usr/local/libexec/noip-ipv6-update` and configures it as the service command.
+You only need to edit `/etc/default/noip-ipv6` with your No-IP credentials.
+The updater receives the current IPv6 as `CURRENT_IPV6` from the checker.
 
-## Configuration examples
-
-### Run a local script
-
-Pass both addresses to a script that updates your DNS provider, firewall, or
-another machine:
+For the No-IP updater included in this project, configure its credentials and
+hostname first:
 
 ```bash
-CHANGE_COMMAND='/usr/local/bin/update-dns "$CURRENT_IPV6" "$OLD_IPV6"'
+sudo nano /etc/default/noip-ipv6
+sudo chmod 0600 /etc/default/noip-ipv6
 ```
 
-The called script receives the new address as its first argument and the old
-address as its second argument. A minimal example script is:
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-new_ipv6=$1
-old_ipv6=${2:-}
-
-printf 'IPv6 changed from %s to %s\n' "${old_ipv6:-<none>}" "$new_ipv6"
-# Add the DNS provider or deployment command here.
-```
-
-Install it with:
-
-```bash
-sudo install -m 0755 update-dns /usr/local/bin/update-dns
-```
-
-### Update DuckDNS
-
-Replace `my-hostname` and `YOUR_DUCKDNS_TOKEN` with your DuckDNS details:
-
-```bash
-CHANGE_COMMAND='curl --fail --silent --show-error "https://www.duckdns.org/update?domains=my-hostname&token=YOUR_DUCKDNS_TOKEN&ipv6=$CURRENT_IPV6"'
-```
-
-Because this example contains a token, restrict access to the configuration:
-
-```bash
-sudo chmod 0600 /etc/default/ipv6-check
-```
-
-### Send an ntfy notification
-
-Replace the topic with a private, hard-to-guess topic name:
-
-```bash
-CHANGE_COMMAND='curl --fail --silent --show-error -d "IPv6 changed from ${OLD_IPV6:-none} to $CURRENT_IPV6" https://ntfy.sh/my-private-topic'
-```
-
-### Select a network interface
+It sends both the IPv4 address from `IPV4_INTERFACE` (default `eno1`) and the
+current IPv6 address to No-IP. To select another IPv4 interface:
 
 If the machine has multiple interfaces, list them and configure the one used
 for the IPv6 route:

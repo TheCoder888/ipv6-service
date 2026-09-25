@@ -1,0 +1,7 @@
+# No-IP account and hostname settings. Protect this file with chmod 0600.
+NOIP_HOSTNAME=valehein.serveirc.com
+NOIP_USERNAME=
+NOIP_PASSWORD=
+
+# Network interface used to find the current IPv4 address.
+IPV4_INTERFACE=eno1

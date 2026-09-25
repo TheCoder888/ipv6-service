@@ -1,5 +1,5 @@
 # Command run when the IPv6 changes. CURRENT_IPV6 and OLD_IPV6 are available.
-CHANGE_COMMAND=
+CHANGE_COMMAND='/usr/local/libexec/noip-ipv6-update "$CURRENT_IPV6"'
 
 # Optional interface name, for example: enp3s0
 INTERFACE=

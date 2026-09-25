@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+NOIP_CONFIG=${NOIP_CONFIG:-/etc/default/noip-ipv6}
+if [[ ! -r "$NOIP_CONFIG" ]]; then
+    echo "No-IP configuration not found: $NOIP_CONFIG" >&2
+    exit 1
+fi
+# shellcheck disable=SC1090
+source "$NOIP_CONFIG"
+
+: "${NOIP_HOSTNAME:?Set NOIP_HOSTNAME in $NOIP_CONFIG}"
+: "${NOIP_USERNAME:?Set NOIP_USERNAME in $NOIP_CONFIG}"
+: "${NOIP_PASSWORD:?Set NOIP_PASSWORD in $NOIP_CONFIG}"
+IPV4_INTERFACE=${IPV4_INTERFACE:-eno1}
+
+ipv6=${1:-}
+if [[ -z "$ipv6" ]]; then
+    ipv6=$(ip -6 -o addr show scope global | awk 'NR == 1 { sub(/\/.*/, "", $4); print $4 }')
+fi
+
+ipv4=$(ip -4 -o addr show dev "$IPV4_INTERFACE" scope global |
+    awk 'NR == 1 { sub(/\/.*/, "", $4); print $4 }')
+
+if [[ -z "$ipv6" ]]; then
+    echo "No global IPv6 address found." >&2
+    exit 1
+fi
+
+if [[ -z "$ipv4" ]]; then
+    echo "No global IPv4 address found on $IPV4_INTERFACE." >&2
+    exit 1
+fi
+
+url="https://dynupdate.no-ip.com/nic/update?hostname=${NOIP_HOSTNAME}&myip=${ipv4},${ipv6}"
+echo "Sending IPv4 ($ipv4) and IPv6 ($ipv6) to No-IP"
+wget --quiet --show-progress --user="$NOIP_USERNAME" --password="$NOIP_PASSWORD" \
+    --output-document=- "$url"
